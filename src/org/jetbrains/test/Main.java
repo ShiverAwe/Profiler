@@ -1,5 +1,7 @@
 package org.jetbrains.test;
 
+import jdk.nashorn.internal.codegen.CompilerConstants;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,6 +11,8 @@ import java.util.stream.IntStream;
 public class Main {
 
     public static void main(String[] args) {
+        CallTracer.registerCall();
+        System.out.println(Thread.currentThread().getStackTrace()[1].getMethodName());
         ExecutorService service = Executors.newFixedThreadPool(3);
         for(int i = 0; i < 5; i++) {
             int start = 100 * i;
@@ -18,5 +22,8 @@ public class Main {
             service.submit(() -> new DummyApplication(arguments).start());
         }
         service.shutdown();
+        CallTracer.registerOut();
+        CallTracer.printTrace();
+
     }
 }

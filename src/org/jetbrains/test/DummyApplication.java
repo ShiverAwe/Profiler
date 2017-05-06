@@ -8,6 +8,7 @@ import java.util.Random;
  * 18-Apr-17
  */
 public class DummyApplication {
+    ThreadCallTracer threadCallTracer;
     private final List<String> args;
     private Random random = new Random(System.nanoTime());
 
@@ -38,7 +39,7 @@ public class DummyApplication {
 
     private void abc(String s) {
         //your code here
-
+        CallTracer.registerCall();
         sleep();
         if (stop()) {
             //do nothing
@@ -49,11 +50,12 @@ public class DummyApplication {
         else {
             xyz(nextArg());
         }
+        CallTracer.registerOut();
     }
 
     private void def(String s) {
         //your code here
-
+        CallTracer.registerCall();
         sleep();
         if (stop()) {
             //do nothing
@@ -64,11 +66,12 @@ public class DummyApplication {
         else {
             xyz(nextArg());
         }
+        CallTracer.registerOut();
     }
 
     private void xyz(String s) {
         //your code here
-
+        CallTracer.registerCall();
         sleep();
         if (stop()) {
             //do nothing
@@ -79,9 +82,14 @@ public class DummyApplication {
         else {
             def(nextArg());
         }
+        CallTracer.registerOut();
     }
 
     public void start() {
+        CallTracer.registerCall();
         abc(nextArg());
+        abc(nextArg());
+        CallTracer.registerOut();
+        CallTracer.printTrace();
     }
 }
