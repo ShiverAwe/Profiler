@@ -1,5 +1,7 @@
 package org.jetbrains.test;
 
+import org.jetbrains.test.Tracker.TrackController;
+
 import java.util.List;
 import java.util.Random;
 
@@ -8,7 +10,6 @@ import java.util.Random;
  * 18-Apr-17
  */
 public class DummyApplication {
-    ThreadCallTracer threadCallTracer;
     private final List<String> args;
     private Random random = new Random(System.nanoTime());
 
@@ -39,7 +40,7 @@ public class DummyApplication {
 
     private void abc(String s) {
         //your code here
-        CallTracer.registerCall();
+        TrackController.registerCall();
         sleep();
         if (stop()) {
             //do nothing
@@ -50,12 +51,12 @@ public class DummyApplication {
         else {
             xyz(nextArg());
         }
-        CallTracer.registerOut();
+        TrackController.registerOut();
     }
 
     private void def(String s) {
         //your code here
-        CallTracer.registerCall();
+        TrackController.registerCall();
         sleep();
         if (stop()) {
             //do nothing
@@ -66,12 +67,12 @@ public class DummyApplication {
         else {
             xyz(nextArg());
         }
-        CallTracer.registerOut();
+        TrackController.registerOut();
     }
 
     private void xyz(String s) {
         //your code here
-        CallTracer.registerCall();
+        TrackController.registerCall();
         sleep();
         if (stop()) {
             //do nothing
@@ -82,14 +83,17 @@ public class DummyApplication {
         else {
             def(nextArg());
         }
-        CallTracer.registerOut();
+        TrackController.registerOut();
     }
 
     public void start() {
-        CallTracer.registerCall();
+        TrackController.registerCall();
         abc(nextArg());
-        abc(nextArg());
-        CallTracer.registerOut();
-        CallTracer.printTrace();
+        TrackController.registerOut();
+        TrackController.printLastTrack(); // to print call-tree into console
+        // Так как нельзя найти момент, когда все потоки будут
+        // закончены приходится перезаписывать файл каждый раз. Последний поток запишет самую полную версию.
+        // А вообще, надо бы это писть в конце программы, когда все деревья достроены.
+        TrackController.saveToFile("dummys.xml");
     }
 }
