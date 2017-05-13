@@ -1,46 +1,42 @@
 package org.jetbrains.test.Tracker;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jetbrains.test.Tracker.Argument.ArgumentList;
+import org.jetbrains.test.Tracker.XML.XMLReadable;
+import org.jetbrains.test.Tracker.XML.XMLWritable;
+import org.jetbrains.test.Tracker.XML.XMLReader;
 
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 import java.util.ArrayList;
-import java.util.Comparator;
 
 /**
  * Created by Vladimir Shefer on 05.05.2017.
  */
-public class TrackUnit {
-    private final TrackUnit invoker;
+public class TrackUnit implements XMLReadable, XMLWritable {
+    private String methodName;
+    private ArgumentList arguments = new ArgumentList();
+    private TrackUnit invoker;
     private ArrayList<TrackUnit> invoked = new ArrayList<>();
-    private final String methodName;
-    private int callCount;
-    // Length of path from this node to the furthest child.
-    private int internalDepth = 0;
-    // Length of path from root to this node.
-    private int externalHeight;
 
-    public int getInternalDepth(){
-        return internalDepth;
+    public TrackUnit() { }
+
+    public TrackUnit(TrackUnit invoker, String methodName, ArgumentList arguments){
+        this.invoker = invoker;
+        this.methodName = methodName;
+        this.arguments = arguments;
+    }
+
+    public ArgumentList getArguments () {
+        return arguments;
     }
 
     public String getMethodName(){
         return this.methodName;
     }
 
-    public int getCallCount(){
-        return callCount;
-    }
-
     public TrackUnit getInvoker(){
         return this.invoker;
-    }
-
-    public TrackUnit(TrackUnit invoker, String methodName){
-        this.invoker = invoker;
-        this.methodName = methodName;
-        callCount = 1;
-        if (invoker != null)
-            externalHeight = invoker.externalHeight + 1;
-        else externalHeight = 0;
     }
 
     /**
@@ -49,44 +45,14 @@ public class TrackUnit {
      * @param methodName
      * @return TrackUnit of invoked method.
      */
-    public TrackUnit getInvoked(String methodName) {
-        for (TrackUnit unit : invoked){
-            if (unit.getMethodName().compareTo(methodName) == 0)
-            {
-                unit.inc();
-                return unit;
-            }
-        }
-        TrackUnit newCall = new TrackUnit(this, methodName);
+    public TrackUnit getInvoked(String methodName, ArgumentList arguments) {
+        TrackUnit newCall = new TrackUnit(this, methodName, arguments);
         invoked.add(newCall);
-        updateInternalDepth(1);
         return newCall;
     }
 
-    /**
-     *  Used to update max inner depth for all parent nodes.
-     * @param internalDepth
-     */
-    public void updateInternalDepth(int internalDepth){
-        // if node has more "deep" children - do nothing. 
-        if (internalDepth < this.internalDepth) return;
-        
-        this.internalDepth = internalDepth;
-        if (invoker != null) {
-            invoker.updateInternalDepth(internalDepth + 1 );
-        }
-    }
-
-    public void inc(){
-        this.callCount++;
-    }
-
-    /**
-     * Sorts invoked methods list by max inner depth for more convenient display
-     * Сортитрует вызванные методы по глубине внутреннего дерева для удобного отображения в консоли.
-     */
-    public void sortByDepth(){
-        invoked.sort(Comparator.comparing(TrackUnit::getInternalDepth));
+    public TrackUnit getInvoked(String methodName){
+        return getInvoked(methodName, new ArgumentList(/*empty*/));
     }
 
     /**
@@ -108,14 +74,17 @@ public class TrackUnit {
      *
      */
     public void printTrack(String placeholder){
-        //sortByDepth();
         int branchCount = invoked.size();
         // for list we do not draw brackets
         if (branchCount == 0) {
-            System.out.println( placeholder + "|>--" +getInfo() + "--");
+            System.out.print( placeholder + "|>--" +getInfo() + "--");
+            arguments.print();
+            System.out.println();
         } else // for nodes with children we prepare "brackets"
         {
-            System.out.println( placeholder +"|\\--" +getInfo() + "--"); // opening block
+            System.out.print( placeholder +"|\\--" +getInfo() + "--"); // opening block
+            arguments.print();
+            System.out.println();
             for (int i = 0; i < branchCount; i++) {
                 TrackUnit unit = invoked.get(i);
                 unit.printTrack(placeholder + "| ");
@@ -128,25 +97,64 @@ public class TrackUnit {
      * @return Information about method. Used for printing to console.
      */
     public String getInfo(){
-        return "" + methodName + "{" + externalHeight + "/" + internalDepth + ", " + callCount + " times}";
+        return methodName;
     }
 
-    /**
-     * Recursively builds call-tree into XMLBuilder-Document
-     * @param element of XMLBuilder-Document, where to put call-tree.
-     */
-    public void putToXMLElement(Element element){
-        Document document = element.getOwnerDocument();
-        Element elem = document.createElement("call");
-        elem.setAttribute("method", methodName);
-        elem.setAttribute("count", callCount+"");
-        //elem.setAttribute("internalDepth", internalDepth +"");
-        //elem.setAttribute("externalHeight", externalHeight +"");
-        element.appendChild(elem);
-        for (int i = 0; i < invoked.size(); i++) {
-            TrackUnit unit = invoked.get(i);
-            unit.putToXMLElement(elem);
+
+    @Override
+    public void read(XMLStreamReader reader) {
+        if (reader.getEventType() != XMLStreamConstants.START_ELEMENT
+            || reader.getLocalName() != "method") throw new RuntimeException("Wrong Reader position. Must be '<method>'.");
+        this.invoker = null;
+        this.methodName = reader.getAttributeValue("", "name");
+        this.arguments.read(reader);
+        read(this, reader);
+    }
+
+    public static TrackUnit read(TrackUnit parent, XMLStreamReader reader){
+        try {
+            if (!XMLReader.nextElementIs(reader, "method")) return null;
+            String name = reader.getLocalName();
+            reader.next();
+            ArgumentList argumentList = new ArgumentList();
+            if (XMLReader.nextElementIs(reader, "arguments")) {
+                argumentList.read(reader);
+            }
+
+            TrackUnit unit = new TrackUnit(parent, name, argumentList);
+
+            if (XMLReader.nextElementIs(reader, "calls")) {
+                reader.next();
+                while (XMLReader.nextElementIs(reader, "method")) {
+                    TrackUnit child = read(unit, reader);
+                    if (child != null) {
+                        unit.invoked.add(child);
+                    }
+                }
+            }
+            return unit;
+        } catch (XMLStreamException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public void write(XMLStreamWriter writer) {
+        try {
+            writer.writeStartElement("method");
+                writer.writeAttribute("name", methodName);
+                arguments.write(writer);
+                if (invoked.size() > 0) {
+                    writer.writeStartElement("calls");
+                    for (TrackUnit unit : invoked) {
+                        unit.write(writer);
+                    }
+                    writer.writeEndElement();
+                }
+            writer.writeEndElement();
+        } catch (XMLStreamException e) {
+            e.printStackTrace();
         }
     }
-
 }

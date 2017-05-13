@@ -1,5 +1,6 @@
 package org.jetbrains.test.shefertest;
 
+import org.jetbrains.test.Tracker.Argument.ArgumentList;
 import org.jetbrains.test.Tracker.TrackController;
 
 import java.util.Random;
@@ -35,24 +36,28 @@ public class TestApp {
     }
 
     void a(){
-        TrackController.registerCall();
+        TrackController.registerCall("a", new ArgumentList()
+                .add("a1", stop())
+                .add("a2", 536)
+        );
         randomCall();
         TrackController.registerOut();
     }
 
     void ab(){
-        TrackController.registerCall();
+        TrackController.registerCall("ab");
         randomCall();
         TrackController.registerOut();
     }
     void abc(){
-        TrackController.registerCall();
+        TrackController.registerCall("abc");
         randomCall();
         TrackController.registerOut();
     }
 
     void abcd(){
-        TrackController.registerCall();
+        TrackController.registerCall("abcd",
+                new ArgumentList().add("s", "ttt").add("f", 123.55).add("i", 56));
         randomCall();
         TrackController.registerOut();
     }

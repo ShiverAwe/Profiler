@@ -1,8 +1,13 @@
 package org.jetbrains.test.Tracker;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jetbrains.test.Tracker.Argument.ArgumentList;
+import org.jetbrains.test.Tracker.XML.XMLReadable;
+import org.jetbrains.test.Tracker.XML.XMLWritable;
+import org.jetbrains.test.Tracker.XML.XMLReader;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 import java.util.ArrayList;
 
 /**
@@ -11,34 +16,40 @@ import java.util.ArrayList;
  * Non-concurrent tree builder of method-calls.
  */
 
-public class Tracker {
+public class Tracker implements XMLReadable, XMLWritable {
     private String name;
     private TrackUnit root;
     private TrackUnit current;
-    // List of root-nodes of tracker, which was already exited.
+
     /**
      * When first called method after initialization ends, @root is added to this list
      * to be accessed later.
      */
     private ArrayList<TrackUnit> exRoots = new ArrayList<>();
 
-    public String getName() {
-        return name;
-    }
-
     public Tracker(String trackerName){
         this.name = trackerName;
     }
 
-    private void init(String methodName){
-        root = new TrackUnit(null, methodName);
+    public Tracker() { }
+
+    public String getName() {
+        return name;
+    }
+
+    private void init(String methodName, ArgumentList arguments){
+        root = new TrackUnit(null, methodName, arguments);
         current = root;
     }
 
-    public void registerCall(String methodName){
-        if (root == null) init(methodName);
+    public void registerCall(String methodName, ArgumentList arguments){
+        if (root == null) init(methodName, arguments);
         else
-        current = current.getInvoked(methodName);
+        current = current.getInvoked(methodName, arguments);
+    }
+
+    public void registerCall(String methodName){
+        registerCall(methodName, new ArgumentList());
     }
 
     public void registerOut(){
@@ -50,8 +61,8 @@ public class Tracker {
     }
 
     /**
-     * Called when got back into the root node.
-     * Saves root into ex-roots list and reinitializes root and current nodes.
+     * Called when root node is registeredOut.
+     * Saves root into ex-roots list and reinitializes the "root" and "current" nodes.
      */
     private void registerExit(){
         exRoots.add(root);
@@ -60,7 +71,9 @@ public class Tracker {
     }
 
     /**
-     * Use this method to check if we got out of all tracked methods.
+     * Use this method to check if we are out of all the tracked methods.
+     * in other words
+     * Claims that all your registered calls are out.
      */
     public void assertExit() {
         if (root != null) throw new RuntimeException(
@@ -115,28 +128,41 @@ public class Tracker {
                 exHead.printTrack();
             }
 
-            System.out.print("Current: ");
-            root.printTrack();
+            if (root != null) {
+                System.out.print("Current: ");
+                root.printTrack();
+            }
             System.out.print("Track end.");
             System.out.println();
         }
     }
 
+    @Override
+    public void read(XMLStreamReader reader){
+        try {
+            if (!XMLReader.nextElementIs(reader, "tracker")) return;
+            this.name = reader.getLocalName();
+            reader.next();
+            while (XMLReader.nextElementIs(reader, "method")){
+                    exRoots.add(TrackUnit.read(null, reader));
+            }
+            reader.next();
+        } catch ( Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-    /**
-     * Builds DOM-tree into the element param.
-     * @param element - DOM Document Element
-     */
-    public void putToXMLElement(Element element){
-        Document document = element.getOwnerDocument();
-        Element threadElement = document.createElement("tracker");
-        threadElement.setAttribute("name", name);
-        element.appendChild(threadElement);
-
-        //TrackUnit callRoot = this.root;
-        //callRoot.putToXMLElement(threadElement);
-        for (TrackUnit exRoot : exRoots){
-            exRoot.putToXMLElement(threadElement);
+    @Override
+    public void write(XMLStreamWriter writer) {
+        try {
+            writer.writeStartElement("tracker");
+                writer.writeAttribute("name", name);
+                for (TrackUnit unit : exRoots) {
+                    unit.write(writer);
+                }
+            writer.writeEndElement();
+        } catch (XMLStreamException e) {
+            e.printStackTrace();
         }
     }
 }

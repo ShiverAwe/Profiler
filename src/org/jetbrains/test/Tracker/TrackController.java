@@ -1,6 +1,7 @@
 package org.jetbrains.test.Tracker;
 
-import org.jetbrains.test.XML.XMLSaver;
+import org.jetbrains.test.Tracker.Argument.ArgumentList;
+import org.jetbrains.test.Tracker.XML.XMLWriter;
 
 /**
  * Created by Vladimir Shefer on 05.05.2017.
@@ -8,28 +9,37 @@ import org.jetbrains.test.XML.XMLSaver;
  * TrackController is a static class, which
  * redirects registration of calls to concrete Tracker
  *
- * Use TrackController.registerCall() at first line of method you want to track and
+ * Use TrackController.registerCall(String methoName) at first line of method you want to track and
  * never forget about TrackController.registerOut() before method end.
+ *
+ * Use registerCall(String methodName, ArgumentList arguments) if you want to save arguments with call info.
  *
  * You can TrackController.printLastTrack() to console.
  *
- * XMLBuilder class lets you save track into xml file.
- * Use TrackController.XMLBuilder.save(String filename) to save all tracked trees into file
+ * XMLWriter class lets you save track into xml file.
+ * Use TrackController.saveToFile(String filename) to save all tracked trees into file
  */
 public class TrackController {
 
     private static TrackerPool trackers = new TrackerPool();
 
-    public static void registerCall(){
-        String methodName = Thread.currentThread().getStackTrace()[2].getMethodName();
+    public static void registerCall(String methodName){
+        registerCall(methodName, new ArgumentList());
+    }
+
+    public static void registerCall(String methodName, ArgumentList arguments){
         trackers.get(getThreadID(), true).
-                registerCall(methodName);
+                registerCall(methodName, arguments);
     }
 
     public static void registerOut(){
         trackers.get(trackerName()).registerOut();
     }
 
+
+    /**
+     * Asserts that all your registered calls was registered out.
+      */
     public static void assertThreadExit(){
         trackers.get(trackerName()).assertExit();
     }
@@ -49,7 +59,7 @@ public class TrackController {
     }
 
     /**
-     * @return name of tracker for current thread
+     * @return getName of tracker for current thread
      */
     private static String trackerName(){
         return getThreadID();
@@ -63,11 +73,11 @@ public class TrackController {
     }
 
     /**
-     * Saves all tracks, excluding current track, to file
+     * Saves all tracks, except the current track, to a file
      */
     public static void saveToFile(String filename){
-        XMLSaver saver = new XMLSaver();
-        saver.save(trackers, filename);
+        XMLWriter writer = new XMLWriter();
+        writer.write(trackers, filename);
     }
 
 }

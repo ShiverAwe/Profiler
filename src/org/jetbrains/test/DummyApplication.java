@@ -1,5 +1,6 @@
 package org.jetbrains.test;
 
+import org.jetbrains.test.Tracker.Argument.ArgumentList;
 import org.jetbrains.test.Tracker.TrackController;
 
 import java.util.List;
@@ -40,7 +41,12 @@ public class DummyApplication {
 
     private void abc(String s) {
         //your code here
-        TrackController.registerCall();
+
+        TrackController.registerCall("abc",
+                new ArgumentList()
+                        .add("s", s)
+        );
+
         sleep();
         if (stop()) {
             //do nothing
@@ -56,7 +62,8 @@ public class DummyApplication {
 
     private void def(String s) {
         //your code here
-        TrackController.registerCall();
+        TrackController.registerCall("def",
+                new ArgumentList().add("s", s) );
         sleep();
         if (stop()) {
             //do nothing
@@ -72,7 +79,9 @@ public class DummyApplication {
 
     private void xyz(String s) {
         //your code here
-        TrackController.registerCall();
+        TrackController.registerCall("xyz",
+                new ArgumentList().add("s", s)
+        );
         sleep();
         if (stop()) {
             //do nothing
@@ -87,9 +96,13 @@ public class DummyApplication {
     }
 
     public void start() {
-        TrackController.registerCall();
+        TrackController.registerCall("start");
+
         abc(nextArg());
+
         TrackController.registerOut();
+        TrackController.assertThreadExit();
+
         TrackController.printLastTrack(); // to print call-tree into console
         // Так как нельзя найти момент, когда все потоки будут
         // закончены приходится перезаписывать файл каждый раз. Последний поток запишет самую полную версию.
