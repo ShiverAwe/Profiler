@@ -1,4 +1,4 @@
-package org.jetbrains.test;
+package org.jetbrains.test.demo.byNiktrop;
 
 import org.jetbrains.test.Tracker.Argument.ArgumentList;
 import org.jetbrains.test.Tracker.TrackController;
@@ -101,7 +101,7 @@ public class DummyApplication {
         abc(nextArg());
 
         TrackController.registerOut();
-        TrackController.assertThreadExit();
+        TrackController.assertTrackExit();
 
         TrackController.printLastTrack(); // to print call-tree into console
         // Так как нельзя найти момент, когда все потоки будут

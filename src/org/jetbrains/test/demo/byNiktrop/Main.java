@@ -1,4 +1,4 @@
-package org.jetbrains.test;
+package org.jetbrains.test.demo.byNiktrop;
 
 
 import java.util.List;

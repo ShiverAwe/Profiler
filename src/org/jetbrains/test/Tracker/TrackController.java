@@ -28,7 +28,7 @@ public class TrackController {
     }
 
     public static void registerCall(String methodName, ArgumentList arguments){
-        trackers.get(getThreadID(), true).
+        trackers.get(trackerName(), true).
                 registerCall(methodName, arguments);
     }
 
@@ -36,11 +36,10 @@ public class TrackController {
         trackers.get(trackerName()).registerOut();
     }
 
-
     /**
      * Asserts that all your registered calls was registered out.
       */
-    public static void assertThreadExit(){
+    public static void assertTrackExit(){
         trackers.get(trackerName()).assertExit();
     }
 
@@ -58,26 +57,16 @@ public class TrackController {
         tracker.printLastTrack();
     }
 
-    /**
-     * @return getName of tracker for current thread
-     */
     private static String trackerName(){
         return getThreadID();
     }
 
-    /**
-     * @return current thread identifier
-     */
     private static String getThreadID(){
         return "thread" + Thread.currentThread().getId();
     }
 
-    /**
-     * Saves all tracks, except the current track, to a file
-     */
     public static void saveToFile(String filename){
         XMLWriter writer = new XMLWriter();
         writer.write(trackers, filename);
     }
-
 }

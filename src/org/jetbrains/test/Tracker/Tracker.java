@@ -1,12 +1,9 @@
 package org.jetbrains.test.Tracker;
 
 import org.jetbrains.test.Tracker.Argument.ArgumentList;
-import org.jetbrains.test.Tracker.XML.XMLReadable;
 import org.jetbrains.test.Tracker.XML.XMLWritable;
-import org.jetbrains.test.Tracker.XML.XMLReader;
 
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import java.util.ArrayList;
 
@@ -16,7 +13,7 @@ import java.util.ArrayList;
  * Non-concurrent tree builder of method-calls.
  */
 
-public class Tracker implements XMLReadable, XMLWritable {
+public class Tracker implements XMLWritable {
     private String name;
     private TrackUnit root;
     private TrackUnit current;
@@ -138,27 +135,12 @@ public class Tracker implements XMLReadable, XMLWritable {
     }
 
     @Override
-    public void read(XMLStreamReader reader){
-        try {
-            if (!XMLReader.nextElementIs(reader, "tracker")) return;
-            this.name = reader.getLocalName();
-            reader.next();
-            while (XMLReader.nextElementIs(reader, "method")){
-                    exRoots.add(TrackUnit.read(null, reader));
-            }
-            reader.next();
-        } catch ( Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void write(XMLStreamWriter writer) {
+    public void writeToXML(XMLStreamWriter writer) {
         try {
             writer.writeStartElement("tracker");
                 writer.writeAttribute("name", name);
                 for (TrackUnit unit : exRoots) {
-                    unit.write(writer);
+                    unit.writeToXML(writer);
                 }
             writer.writeEndElement();
         } catch (XMLStreamException e) {

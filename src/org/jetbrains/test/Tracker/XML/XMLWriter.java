@@ -15,17 +15,23 @@ import java.io.IOException;
 public class XMLWriter {
     private XMLStreamWriter writer = null;
 
-
     public void write(TrackerPool trackerPool, String filename){
         writer = getNewWriter(filename);
         try {
             writer.writeStartDocument();
-                trackerPool.write(writer);
+                trackerPool.writeToXML(writer);
             writer.writeEndDocument();
             writer.flush();
-            writer.close();
         } catch (XMLStreamException e) {
             e.printStackTrace();
+            throw new RuntimeException("Could not write to XML ", e);
+        }
+        finally {
+            try {
+                writer.close();
+            } catch (XMLStreamException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -38,7 +44,7 @@ public class XMLWriter {
             return writer;
         } catch (XMLStreamException | IOException e) {
             e.printStackTrace();
-            throw new RuntimeException("Could not create XML writer");
+            throw new RuntimeException("Could not create XML writer", e);
         }
     }
 }

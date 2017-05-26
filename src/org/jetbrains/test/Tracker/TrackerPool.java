@@ -3,17 +3,17 @@ package org.jetbrains.test.Tracker;
 import org.jetbrains.test.Tracker.XML.*;
 
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import java.util.*;
 
 /**
- * Created by Vladimir Shefer on 09.05.2017.
+ * Vladimir Shefer
+ * 09.05.2017.
  */
-public class TrackerPool implements XMLReadable, XMLWritable, Iterable<Tracker>{
+public class TrackerPool implements XMLWritable, Iterable<Tracker>{
     private final TreeMap<String, Tracker> pool = new TreeMap<>();
 
-    public TrackerPool() { }
+    public TrackerPool() {}
 
     public boolean check(String name){
         return  pool.containsKey(name);
@@ -45,8 +45,8 @@ public class TrackerPool implements XMLReadable, XMLWritable, Iterable<Tracker>{
         return newTracker;
     }
 
-    public Set<String> getNames(){
-        return pool.keySet();
+    public void put(String name, Tracker tracker){
+        pool.put(name, tracker);
     }
 
     @Override
@@ -55,28 +55,11 @@ public class TrackerPool implements XMLReadable, XMLWritable, Iterable<Tracker>{
     }
 
     @Override
-    public void read(XMLStreamReader reader) {
-        try {
-            if (!XMLReader.nextElementIs(reader, "trackers")) return;
-            reader.next();
-            while (XMLReader.nextElementIs(reader, "tracker")){
-                System.out.println("read tracker");
-                Tracker tracker = new Tracker();
-                tracker.read(reader);
-                pool.put(tracker.getName(), tracker);
-                reader.next();
-            }
-        } catch (XMLStreamException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void write(XMLStreamWriter writer) {
+    public void writeToXML(XMLStreamWriter writer) {
         try {
             writer.writeStartElement("trackers");
                 for (Tracker tracker : this) {
-                    tracker.write(writer);
+                    tracker.writeToXML(writer);
                 }
             writer.writeEndElement();
         } catch (XMLStreamException e) {

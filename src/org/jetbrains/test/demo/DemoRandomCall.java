@@ -1,4 +1,4 @@
-package org.jetbrains.test.shefertest;
+package org.jetbrains.test.demo;
 
 import org.jetbrains.test.Tracker.Argument.ArgumentList;
 import org.jetbrains.test.Tracker.TrackController;
@@ -6,18 +6,19 @@ import org.jetbrains.test.Tracker.TrackController;
 import java.util.Random;
 
 /**
- * Created by Владимир on 06.05.2017.
+ * Vladimir Shefer
+ * 06.05.2017.
  */
-public class TestApp {
-    Random random = new Random();
-    int callCounter = 1;
-    final int maxCallCounter = 1000;
+public class DemoRandomCall {
+    private Random random = new Random();
+    private int callCounter = 1;
+    private final int maxCallCounter = 1000;
 
-    TestApp(){
-          randomCall();
+    public void start() {
+        randomCall();
     }
 
-    public void randomCall(){
+    private void randomCall(){
         if (stop()) return;
         for (int i = 0; i < random.nextInt(5); i++) {
             int nextFunction = random.nextInt(callCounter % 10 + 1);
@@ -31,34 +32,43 @@ public class TestApp {
         }
     }
 
-    public boolean stop(){
+    private boolean stop(){
         return (callCounter++ > maxCallCounter);
     }
 
-    void a(){
-        TrackController.registerCall("a", new ArgumentList()
-                .add("a1", stop())
-                .add("a2", 536)
+    private void a(){
+        TrackController.registerCall("a",
+                new ArgumentList()
+                        .add("a1", stop())
+                        .add("a2", 536)
         );
         randomCall();
         TrackController.registerOut();
     }
 
-    void ab(){
-        TrackController.registerCall("ab");
+    private void ab(){
+        TrackController.registerCall("ab",
+                new ArgumentList()
+                        .add("yo", "abgil")
+        );
         randomCall();
         TrackController.registerOut();
     }
-    void abc(){
+    private void abc(){
         TrackController.registerCall("abc");
         randomCall();
         TrackController.registerOut();
     }
 
-    void abcd(){
+    private void abcd(){
         TrackController.registerCall("abcd",
-                new ArgumentList().add("s", "ttt").add("f", 123.55).add("i", 56));
+                new ArgumentList()
+                        .add("s", "ttt")
+                        .add("f", 123.55)
+                        .add("i", 56)
+        );
         randomCall();
         TrackController.registerOut();
     }
+
 }
