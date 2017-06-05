@@ -1,3 +1,2 @@
-# java-selective-profiler
-Call Tracer class
-provides method call tracking
+# Profiler
+Позволяет строить дерево вызовов выбранных методов.
